@@ -514,11 +514,63 @@ class CalculusApp:
 
         ttk.Label(left, text='Select a problem:', font=('', 10, 'bold')).pack(anchor='w', padx=5, pady=2)
 
-        self.problem_listbox = tk.Listbox(left, width=40, height=20)
+        self.problem_listbox = tk.Listbox(left, width=40, height=12)
         self.problem_listbox.pack(fill='both', expand=True, padx=5, pady=2)
         for i, p in enumerate(self.problems):
             self.problem_listbox.insert(i, p['title'])
         self.problem_listbox.bind('<<ListboxSelect>>', self._on_problem_select)
+
+        sep = ttk.Separator(left, orient='horizontal')
+        sep.pack(fill='x', padx=5, pady=5)
+
+        ttk.Label(left, text='Your own problem:', font=('', 10, 'bold')).pack(anchor='w', padx=5, pady=2)
+
+        self.c = ttk.Frame(left)
+        self.c.pack(fill='x', padx=5, pady=2)
+
+        ttk.Label(self.c, text='Type:').grid(row=0, column=0, sticky='w')
+        self.custom_type = ttk.Combobox(self.c, values=['Derivative', 'Integral', 'Tangent', 'Area Between', 'Complex Phase', 'Complex Modulus'], width=18, state='readonly')
+        self.custom_type.grid(row=0, column=1, pady=1)
+        self.custom_type.set('Derivative')
+        self.custom_type.bind('<<ComboboxSelected>>', self._on_custom_type_change)
+
+        ttk.Label(self.c, text='f(x) =').grid(row=1, column=0, sticky='w')
+        self.custom_func = ttk.Entry(self.c, width=22)
+        self.custom_func.grid(row=1, column=1, pady=1)
+        self.custom_func.insert(0, 'x**2')
+
+        ttk.Label(self.c, text='f2(x) =').grid(row=2, column=0, sticky='w')
+        self.custom_func2 = ttk.Entry(self.c, width=22)
+        self.custom_func2.grid(row=2, column=1, pady=1)
+        self.custom_func2.insert(0, 'x')
+
+        ttk.Label(self.c, text='From:').grid(row=3, column=0, sticky='w')
+        self.custom_a = ttk.Entry(self.c, width=10)
+        self.custom_a.grid(row=3, column=1, sticky='w', pady=1)
+        self.custom_a.insert(0, '0')
+
+        ttk.Label(self.c, text='To:').grid(row=3, column=1, padx=55)
+        self.custom_b = ttk.Entry(self.c, width=10)
+        self.custom_b.grid(row=3, column=1, padx=80, pady=1)
+        self.custom_b.insert(0, '1')
+
+        self.custom_at_label = ttk.Label(self.c, text='At x =')
+        self.custom_at_label.grid(row=4, column=0, sticky='w')
+        self.custom_at = ttk.Entry(self.c, width=10)
+        self.custom_at.grid(row=4, column=1, sticky='w', pady=1)
+        self.custom_at.insert(0, '0.5')
+        self.custom_range_label = ttk.Label(self.c, text='Range:')
+        self.custom_range = ttk.Entry(self.c, width=10)
+        self.custom_range.grid(row=4, column=1, padx=80, pady=1)
+        self.custom_range.insert(0, '2')
+
+        self._update_custom_fields()
+
+        btn_c = ttk.Frame(left)
+        btn_c.pack(fill='x', padx=5, pady=3)
+        ttk.Button(btn_c, text='Solve', command=self._solve_custom).pack(side='left', padx=2)
+        ttk.Button(btn_c, text='Plot', command=self._plot_custom).pack(side='left', padx=2)
+        ttk.Button(btn_c, text='Add to List', command=self._add_custom_to_list).pack(side='left', padx=2)
 
         right = ttk.Frame(tab)
         right.pack(side='right', fill='both', expand=True, padx=5, pady=5)
@@ -681,6 +733,258 @@ class CalculusApp:
 
         self.prob_ax.set_title(self.current_problem['title'])
         self.prob_canvas.draw()
+
+
+    def _on_custom_type_change(self, event=None):
+        self._update_custom_fields()
+
+    def _update_custom_fields(self):
+        t = self.custom_type.get()
+        show_f2 = t == 'Area Between'
+        show_bounds = t in ('Integral', 'Area Between')
+        show_at = t == 'Tangent'
+        show_range = t in ('Complex Phase', 'Complex Modulus')
+
+        self.custom_func2.grid()
+        self.custom_func2.grid_remove()
+        self.custom_a.grid()
+        self.custom_a.grid_remove()
+        self.custom_b.grid()
+        self.custom_b.grid_remove()
+        self.custom_at.grid()
+        self.custom_at.grid_remove()
+        self.custom_range.grid()
+        self.custom_range.grid_remove()
+        self.custom_at_label.grid()
+        self.custom_at_label.grid_remove()
+        self.custom_range_label.grid()
+        self.custom_range_label.grid_remove()
+
+        if show_f2:
+            self.custom_func2.grid()
+        if show_bounds:
+            self.custom_a.grid()
+            self.custom_b.grid()
+        if show_at:
+            self.custom_at_label.grid()
+            self.custom_at.grid()
+        if show_range:
+            self.custom_range_label.grid()
+            self.custom_range.grid()
+
+    def _solve_custom(self):
+        t = self.custom_type.get()
+        func_str = self.custom_func.get().strip()
+        x = sp.Symbol('x')
+        steps = []
+        answer = ''
+
+        try:
+            if t == 'Derivative':
+                f = sp.sympify(func_str)
+                fp = sp.diff(f, x)
+                steps.append(f'f(x) = {sp.latex(f)}')
+                steps.append(f"f'(x) = {sp.latex(fp)}")
+                a_str = self.custom_a.get().strip()
+                b_str = self.custom_b.get().strip()
+                if a_str:
+                    a = float(sp.N(sp.sympify(a_str)))
+                    steps.append(f"f'({a}) = {float(fp.subs(x, a)):.4f}")
+                if b_str:
+                    b = float(sp.N(sp.sympify(b_str)))
+                    steps.append(f"f'({b}) = {float(fp.subs(x, b)):.4f}")
+                answer = sp.latex(fp)
+            elif t == 'Integral':
+                f = sp.sympify(func_str)
+                F = sp.integrate(f, x)
+                steps.append(f'∫ f(x) dx = {sp.latex(F)} + C')
+                a = float(sp.N(sp.sympify(self.custom_a.get())))
+                b = float(sp.N(sp.sympify(self.custom_b.get())))
+                definite = sp.integrate(f, (x, a, b))
+                steps.append(f'∫ from {a:.4f} to {b:.4f}')
+                steps.append(f'= {float(definite):.6f}')
+                answer = f'{float(definite):.6f}'
+            elif t == 'Tangent':
+                f = sp.sympify(func_str)
+                fp = sp.diff(f, x)
+                at = float(self.custom_at.get())
+                y0 = float(f.subs(x, at))
+                m = float(fp.subs(x, at))
+                steps.append(f'f(x) = {sp.latex(f)}')
+                steps.append(f"f'(x) = {sp.latex(fp)}")
+                steps.append(f'At x = {at}:')
+                steps.append(f'  f({at}) = {y0:.4f}')
+                steps.append(f"  f'({at}) = {m:.4f}")
+                steps.append(f'Tangent: y = {m:.4f}(x - {at}) + {y0:.4f}')
+                answer = f'y = {m:.4f}(x - {at}) + {y0:.4f}'
+            elif t == 'Area Between':
+                f1 = sp.sympify(func_str)
+                f2 = sp.sympify(self.custom_func2.get().strip())
+                a = float(sp.N(sp.sympify(self.custom_a.get())))
+                b = float(sp.N(sp.sympify(self.custom_b.get())))
+                area = sp.integrate(sp.Abs(f1 - f2), (x, a, b))
+                steps.append(f'f1(x) = {sp.latex(f1)}')
+                steps.append(f'f2(x) = {sp.latex(f2)}')
+                steps.append(f'Area = ∫ |f1 - f2| dx from {a} to {b}')
+                steps.append(f'= {float(area):.6f}')
+                answer = f'{float(area):.6f}'
+            elif t in ('Complex Phase', 'Complex Modulus'):
+                steps.append(f'f(z) = {func_str}')
+                steps.append('Visualizing in the complex plane...')
+                answer = 'See the plot for visualization.'
+        except Exception as e:
+            steps.append(f'Error: {e}')
+            answer = 'Could not solve'
+
+        self.prob_question.config(state='normal')
+        self.prob_question.delete('1.0', 'end')
+        self.prob_question.insert('1.0', f'Solving: {t}\nf(x) = {func_str}')
+        self.prob_question.config(state='disabled')
+        text = '\n\n'.join(f'{i+1}. {s}' for i, s in enumerate(steps))
+        text += f'\n\nAnswer: {answer}'
+        self.prob_steps.config(state='normal')
+        self.prob_steps.delete('1.0', 'end')
+        self.prob_steps.insert('1.0', text)
+        self.prob_steps.config(state='disabled')
+
+    def _plot_custom(self):
+        t = self.custom_type.get()
+        func_str = self.custom_func.get().strip()
+        self.prob_ax.clear()
+        x = sp.Symbol('x')
+
+        try:
+            if t == 'Derivative':
+                f = sp.sympify(func_str)
+                fp = sp.diff(f, x)
+                fn = sp.lambdify(x, f, 'numpy')
+                fpn = sp.lambdify(x, fp, 'numpy')
+                a = float(sp.N(sp.sympify(self.custom_a.get() or '-2')))
+                b = float(sp.N(sp.sympify(self.custom_b.get() or '2')))
+                if a >= b: a, b = -2, 2
+                xs = np.linspace(a, b, 400)
+                self.prob_ax.plot(xs, fn(xs), 'b-', linewidth=2, label='f(x)')
+                self.prob_ax.plot(xs, fpn(xs), 'r--', linewidth=2, label="f'(x)")
+                self.prob_ax.axhline(0, color='gray', linewidth=0.5)
+                self.prob_ax.legend(fontsize=9)
+                self.prob_ax.grid(True, alpha=0.3)
+            elif t == 'Integral':
+                f = sp.sympify(func_str)
+                fn = sp.lambdify(x, f, 'numpy')
+                a = float(sp.N(sp.sympify(self.custom_a.get())))
+                b = float(sp.N(sp.sympify(self.custom_b.get())))
+                pad = (b - a) * 0.2
+                xs = np.linspace(a - pad, b + pad, 400)
+                self.prob_ax.plot(xs, fn(xs), 'b-', linewidth=2)
+                xf = np.linspace(a, b, 400)
+                self.prob_ax.fill_between(xf, fn(xf), alpha=0.3, color='skyblue')
+                self.prob_ax.axvline(a, color='red', linestyle='--')
+                self.prob_ax.axvline(b, color='red', linestyle='--')
+                self.prob_ax.grid(True, alpha=0.3)
+            elif t == 'Tangent':
+                f = sp.sympify(func_str)
+                fp = sp.diff(f, x)
+                fn = sp.lambdify(x, f, 'numpy')
+                fpn = sp.lambdify(x, fp, 'numpy')
+                at = float(self.custom_at.get())
+                a = float(sp.N(sp.sympify(self.custom_a.get() or str(at - 2))))
+                b = float(sp.N(sp.sympify(self.custom_b.get() or str(at + 2))))
+                xs = np.linspace(a, b, 400)
+                y0 = fn(at)
+                m = fpn(at)
+                self.prob_ax.plot(xs, fn(xs), 'b-', linewidth=2, label='f(x)')
+                self.prob_ax.plot(xs, m * (xs - at) + y0, 'g--', linewidth=2, label='Tangent')
+                self.prob_ax.plot(at, y0, 'ro', markersize=8)
+                self.prob_ax.axhline(0, color='gray', linewidth=0.5)
+                self.prob_ax.legend(fontsize=9)
+                self.prob_ax.grid(True, alpha=0.3)
+            elif t == 'Area Between':
+                f1 = sp.sympify(func_str)
+                f2 = sp.sympify(self.custom_func2.get().strip())
+                fn1 = sp.lambdify(x, f1, 'numpy')
+                fn2 = sp.lambdify(x, f2, 'numpy')
+                a = float(sp.N(sp.sympify(self.custom_a.get())))
+                b = float(sp.N(sp.sympify(self.custom_b.get())))
+                pad = (b - a) * 0.2
+                xs = np.linspace(a - pad, b + pad, 400)
+                self.prob_ax.plot(xs, fn1(xs), 'b-', linewidth=2, label='f1(x)')
+                self.prob_ax.plot(xs, fn2(xs), 'r-', linewidth=2, label='f2(x)')
+                xf = np.linspace(a, b, 400)
+                y1 = fn1(xf); y2 = fn2(xf)
+                self.prob_ax.fill_between(xf, y1, y2, alpha=0.3, color='green')
+                self.prob_ax.axhline(0, color='gray', linewidth=0.5)
+                self.prob_ax.legend(fontsize=9)
+                self.prob_ax.grid(True, alpha=0.3)
+            elif t == 'Complex Phase':
+                r = float(self.custom_range.get())
+                n = 300
+                xx = np.linspace(-r, r, n)
+                yy = np.linspace(-r, r, n)
+                XX, YY = np.meshgrid(xx, yy)
+                ZZ = XX + 1j * YY
+                lv = {'z': ZZ, 'np': np, 'sin': np.sin, 'cos': np.cos, 'exp': np.exp,
+                      'log': np.log, 'abs': np.abs, 'sqrt': np.sqrt, 'tan': np.tan,
+                      'pi': np.pi, 'e': np.e, '1j': 1j}
+                FZ = eval(func_str.replace('^', '**'), {'__builtins__': {}}, lv)
+                phase = np.angle(FZ)
+                self.prob_ax.imshow(phase, extent=[-r, r, -r, r], cmap='hsv', origin='lower', aspect='auto')
+                self.prob_ax.set_xlabel('Re(z)')
+                self.prob_ax.set_ylabel('Im(z)')
+            elif t == 'Complex Modulus':
+                r = float(self.custom_range.get())
+                n = 300
+                xx = np.linspace(-r, r, n)
+                yy = np.linspace(-r, r, n)
+                XX, YY = np.meshgrid(xx, yy)
+                ZZ = XX + 1j * YY
+                lv = {'z': ZZ, 'np': np, 'sin': np.sin, 'cos': np.cos, 'exp': np.exp,
+                      'log': np.log, 'abs': np.abs, 'sqrt': np.sqrt, 'tan': np.tan,
+                      'pi': np.pi, 'e': np.e, '1j': 1j}
+                FZ = eval(func_str.replace('^', '**'), {'__builtins__': {}}, lv)
+                mod = np.abs(FZ)
+                mod = np.clip(mod, 1e-10, np.percentile(mod[~np.isnan(mod)], 95))
+                cs = self.prob_ax.contourf(XX, YY, mod, levels=30, cmap='viridis')
+                self.prob_fig.colorbar(cs, ax=self.prob_ax, fraction=0.046, pad=0.04)
+                self.prob_ax.set_xlabel('Re(z)')
+                self.prob_ax.set_ylabel('Im(z)')
+
+            self.prob_ax.set_title(f'{t}: {func_str}')
+        except Exception as e:
+            self.prob_ax.text(0.5, 0.5, f'Error: {e}', ha='center', va='center', transform=self.prob_ax.transAxes)
+        self.prob_canvas.draw()
+
+    def _add_custom_to_list(self):
+        t = self.custom_type.get()
+        func_str = self.custom_func.get().strip()
+        title = f'Custom: {t} of {func_str}'
+        if len(title) > 45:
+            title = title[:42] + '...'
+        q = f'Solve the {t.lower()} of f(x) = {func_str}'
+        steps = ['Custom problem — click Show Solution or Visualize.']
+        answer = 'Use Solve and Plot buttons.'
+        p = {'title': title, 'question': q, 'steps': steps, 'answer': answer}
+        if t == 'Tangent':
+            p['plot'] = {'type': 'tangent', 'func': func_str, 'at': float(self.custom_at.get()),
+                          'xmin': float(self.custom_a.get() or '-2'), 'xmax': float(self.custom_b.get() or '2')}
+        elif t == 'Integral':
+            p['plot'] = {'type': 'integral', 'func': func_str,
+                          'a': float(sp.N(sp.sympify(self.custom_a.get()))),
+                          'b': float(sp.N(sp.sympify(self.custom_b.get())))}
+        elif t == 'Area Between':
+            p['title'] = f'Custom: Area between {func_str} and {self.custom_func2.get()}'
+            p['plot'] = {'type': 'area_between', 'func1': func_str, 'func2': self.custom_func2.get().strip(),
+                          'a': float(sp.N(sp.sympify(self.custom_a.get()))),
+                          'b': float(sp.N(sp.sympify(self.custom_b.get())))}
+        elif t == 'Derivative':
+            p['plot'] = {'type': 'derivative', 'func': func_str, 'xmin': -3, 'xmax': 3}
+        elif t in ('Complex Phase', 'Complex Modulus'):
+            pt = 'complex_phase' if t == 'Complex Phase' else 'complex_modulus'
+            p['plot'] = {'type': pt, 'func': func_str, 'range': float(self.custom_range.get())}
+        self.problems.append(p)
+        self.problem_listbox.insert('end', title)
+        self.problem_listbox.select_clear(0, 'end')
+        self.problem_listbox.select_set('end')
+        self._on_problem_select(None)
 
 
 if __name__ == '__main__':
