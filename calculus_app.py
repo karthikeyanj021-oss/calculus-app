@@ -41,6 +41,7 @@ class CalculusApp:
         self._build_derivative_tab()
         self._build_integral_tab()
         self._build_complex_tab()
+        self._build_problems_tab()
 
     def _safe_func(self, expr_str):
         x = sp.Symbol('x')
@@ -358,6 +359,328 @@ class CalculusApp:
         fig.clear()
         fig.add_subplot(111)
         canvas.draw()
+
+
+    def _build_problems_tab(self):
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text='Practice Problems')
+
+        self.problems = [
+            {
+                'title': 'Derivative of a cubic',
+                'question': 'Find the derivative of f(x) = x³ - 3x² + 2x - 5.\nThen find f\'(0) and f\'(2).',
+                'steps': [
+                    'f\'(x) = d/dx (x³ - 3x² + 2x - 5)',
+                    'Using the power rule: d/dx(xⁿ) = n·xⁿ⁻¹',
+                    'f\'(x) = 3x² - 6x + 2',
+                    'f\'(0) = 3(0)² - 6(0) + 2 = 2',
+                    'f\'(2) = 3(4) - 6(2) + 2 = 12 - 12 + 2 = 2',
+                ],
+                'answer': 'f\'(x) = 3x² - 6x + 2, f\'(0) = 2, f\'(2) = 2',
+                'plot': {
+                    'type': 'derivative',
+                    'func': 'x**3 - 3*x**2 + 2*x - 5',
+                    'xmin': -2, 'xmax': 4,
+                }
+            },
+            {
+                'title': 'Tangent line to sin(x)',
+                'question': 'Find the equation of the tangent line to\nf(x) = sin(x) at x = π/4.',
+                'steps': [
+                    'f(x) = sin(x), f\'(x) = cos(x)',
+                    'At x = π/4: f(π/4) = sin(π/4) = √2/2',
+                    'f\'(π/4) = cos(π/4) = √2/2',
+                    'Tangent line: y - y₀ = m(x - x₀)',
+                    'y - √2/2 = (√2/2)(x - π/4)',
+                    'y = (√2/2)x + (√2/2)(1 - π/4)',
+                ],
+                'answer': 'y = (√2/2)(x - π/4) + √2/2',
+                'plot': {
+                    'type': 'tangent',
+                    'func': 'sin(x)',
+                    'at': 0.7854,
+                    'xmin': 0, 'xmax': 1.57,
+                }
+            },
+            {
+                'title': 'Critical points of a cubic',
+                'question': 'Find the critical points of f(x) = x³ - 3x² + 2\nand determine if they are maxima or minima.',
+                'steps': [
+                    'f(x) = x³ - 3x² + 2',
+                    'f\'(x) = 3x² - 6x = 3x(x - 2)',
+                    'Set f\'(x) = 0: x = 0 or x = 2',
+                    'f\'\'(x) = 6x - 6',
+                    'At x = 0: f\'\'(0) = -6 < 0 → Local maximum',
+                    'At x = 2: f\'\'(2) = 6 > 0 → Local minimum',
+                    'f(0) = 2, f(2) = 8 - 12 + 2 = -2',
+                ],
+                'answer': 'Local max at (0, 2), Local min at (2, -2)',
+                'plot': {
+                    'type': 'derivative',
+                    'func': 'x**3 - 3*x**2 + 2',
+                    'xmin': -1.5, 'xmax': 3.5,
+                }
+            },
+            {
+                'title': 'Definite integral of a quadratic',
+                'question': 'Evaluate ∫₀¹ (x² - 2x + 1) dx',
+                'steps': [
+                    '∫ (x² - 2x + 1) dx = x³/3 - x² + x + C',
+                    'F(1) = 1/3 - 1 + 1 = 1/3',
+                    'F(0) = 0 - 0 + 0 = 0',
+                    '∫₀¹ = F(1) - F(0) = 1/3',
+                ],
+                'answer': '1/3',
+                'plot': {
+                    'type': 'integral',
+                    'func': 'x**2 - 2*x + 1',
+                    'a': 0, 'b': 1,
+                }
+            },
+            {
+                'title': 'Area between curves',
+                'question': 'Find the area between y = x² and y = x\nfrom x = 0 to x = 1.',
+                'steps': [
+                    'Area = ∫₀¹ (upper - lower) dx',
+                    'On [0,1]: x ≥ x², so upper = x, lower = x²',
+                    'Area = ∫₀¹ (x - x²) dx',
+                    '= [x²/2 - x³/3]₀¹',
+                    '= (1/2 - 1/3) - (0 - 0)',
+                    '= 1/6',
+                ],
+                'answer': 'Area = 1/6',
+                'plot': {
+                    'type': 'area_between',
+                    'func1': 'x',
+                    'func2': 'x**2',
+                    'a': 0, 'b': 1,
+                }
+            },
+            {
+                'title': 'Integral of sin(x)',
+                'question': 'Evaluate ∫₀^π sin(x) dx',
+                'steps': [
+                    '∫ sin(x) dx = -cos(x) + C',
+                    'F(π) = -cos(π) = -(-1) = 1',
+                    'F(0) = -cos(0) = -1',
+                    '∫₀^π = F(π) - F(0) = 1 - (-1) = 2',
+                ],
+                'answer': '2',
+                'plot': {
+                    'type': 'integral',
+                    'func': 'sin(x)',
+                    'a': 0, 'b': 3.14159,
+                }
+            },
+            {
+                'title': 'Phase plot of z²',
+                'question': 'Plot the phase portrait of f(z) = z².\nWhat happens to the argument near the origin?',
+                'steps': [
+                    'f(z) = z² = r²e^(i2θ)',
+                    'The argument doubles: arg(f(z)) = 2·arg(z)',
+                    'Near the origin (z=0): f(z) ≈ 0',
+                    'The phase shows 2 full color cycles around origin',
+                    'This is because winding number = 2',
+                ],
+                'answer': 'f(z) = z² doubles the argument, creating 2 color cycles around the origin',
+                'plot': {
+                    'type': 'complex_phase',
+                    'func': 'z**2',
+                    'range': 2,
+                }
+            },
+            {
+                'title': 'Modulus of exp(z)',
+                'question': 'Plot |exp(z)| in the complex plane.\nDescribe the pattern.',
+                'steps': [
+                    'f(z) = eᶻ = e^(x+iy) = eˣ·e^(iy)',
+                    '|eᶻ| = eˣ (depends only on real part)',
+                    'arg(eᶻ) = y (depends only on imaginary part)',
+                    'The modulus increases exponentially along x-axis',
+                    'The argument varies linearly along y-axis',
+                ],
+                'answer': '|eᶻ| = eˣ — exponential growth along real axis, constant along imaginary axis',
+                'plot': {
+                    'type': 'complex_modulus',
+                    'func': 'exp(z)',
+                    'range': 2,
+                }
+            },
+        ]
+
+        left = ttk.Frame(tab, width=300)
+        left.pack(side='left', fill='y', padx=5, pady=5)
+        left.pack_propagate(False)
+
+        ttk.Label(left, text='Select a problem:', font=('', 10, 'bold')).pack(anchor='w', padx=5, pady=2)
+
+        self.problem_listbox = tk.Listbox(left, width=40, height=20)
+        self.problem_listbox.pack(fill='both', expand=True, padx=5, pady=2)
+        for i, p in enumerate(self.problems):
+            self.problem_listbox.insert(i, p['title'])
+        self.problem_listbox.bind('<<ListboxSelect>>', self._on_problem_select)
+
+        right = ttk.Frame(tab)
+        right.pack(side='right', fill='both', expand=True, padx=5, pady=5)
+
+        self.prob_question = tk.Text(right, height=4, width=60, wrap='word', font=('', 10))
+        self.prob_question.pack(fill='x', padx=5, pady=2)
+        self.prob_question.insert('1.0', 'Select a problem from the list.')
+        self.prob_question.config(state='disabled')
+
+        self.prob_steps = tk.Text(right, height=12, width=60, wrap='word', font=('', 10))
+        self.prob_steps.pack(fill='x', padx=5, pady=2)
+        self.prob_steps.config(state='disabled')
+
+        btn_frame = ttk.Frame(right)
+        btn_frame.pack(fill='x', padx=5, pady=2)
+
+        self.show_solution_btn = ttk.Button(btn_frame, text='Show Solution', command=self._show_problem_solution)
+        self.show_solution_btn.pack(side='left', padx=5)
+
+        self.plot_problem_btn = ttk.Button(btn_frame, text='Visualize', command=self._plot_problem)
+        self.plot_problem_btn.pack(side='left', padx=5)
+
+        self.current_problem = None
+        self.prob_fig = Figure(figsize=(6, 4))
+        self.prob_ax = self.prob_fig.add_subplot(111)
+        self.prob_canvas = FigureCanvasTkAgg(self.prob_fig, master=right)
+        self.prob_canvas.get_tk_widget().pack(fill='both', expand=True, padx=5, pady=5)
+
+    def _on_problem_select(self, event):
+        sel = self.problem_listbox.curselection()
+        if not sel:
+            return
+        idx = sel[0]
+        self.current_problem = self.problems[idx]
+        self.prob_question.config(state='normal')
+        self.prob_question.delete('1.0', 'end')
+        self.prob_question.insert('1.0', self.current_problem['question'])
+        self.prob_question.config(state='disabled')
+        self.prob_steps.config(state='normal')
+        self.prob_steps.delete('1.0', 'end')
+        self.prob_steps.insert('1.0', 'Click "Show Solution" to see the step-by-step solution.')
+        self.prob_steps.config(state='disabled')
+        self.prob_ax.clear()
+        self.prob_canvas.draw()
+
+    def _show_problem_solution(self):
+        if not self.current_problem:
+            return
+        steps = '\n\n'.join(f'{i+1}. {s}' for i, s in enumerate(self.current_problem['steps']))
+        steps += f'\n\nAnswer: {self.current_problem["answer"]}'
+        self.prob_steps.config(state='normal')
+        self.prob_steps.delete('1.0', 'end')
+        self.prob_steps.insert('1.0', steps)
+        self.prob_steps.config(state='disabled')
+
+    def _plot_problem(self):
+        if not self.current_problem:
+            return
+        cfg = self.current_problem.get('plot')
+        if not cfg:
+            return
+        self.prob_ax.clear()
+        t = cfg['type']
+        x = sp.Symbol('x')
+
+        if t == 'derivative':
+            f = sp.sympify(cfg['func'])
+            fp = sp.diff(f, x)
+            fn = sp.lambdify(x, f, 'numpy')
+            fpn = sp.lambdify(x, fp, 'numpy')
+            xs = np.linspace(cfg['xmin'], cfg['xmax'], 400)
+            self.prob_ax.plot(xs, fn(xs), 'b-', linewidth=2, label=f'f(x)')
+            self.prob_ax.plot(xs, fpn(xs), 'r--', linewidth=2, label=f"f'(x)")
+            self.prob_ax.axhline(0, color='gray', linewidth=0.5)
+            self.prob_ax.legend(fontsize=9)
+            self.prob_ax.grid(True, alpha=0.3)
+            self.prob_ax.set_xlabel('x')
+
+        elif t == 'tangent':
+            f = sp.sympify(cfg['func'])
+            fp = sp.diff(f, x)
+            fn = sp.lambdify(x, f, 'numpy')
+            fpn = sp.lambdify(x, fp, 'numpy')
+            at = cfg['at']
+            xs = np.linspace(cfg['xmin'], cfg['xmax'], 400)
+            y0 = fn(at)
+            m = fpn(at)
+            self.prob_ax.plot(xs, fn(xs), 'b-', linewidth=2, label=f'f(x)')
+            self.prob_ax.plot(xs, m * (xs - at) + y0, 'g--', linewidth=2, label='Tangent')
+            self.prob_ax.plot(at, y0, 'ro', markersize=8)
+            self.prob_ax.axhline(0, color='gray', linewidth=0.5)
+            self.prob_ax.legend(fontsize=9)
+            self.prob_ax.grid(True, alpha=0.3)
+
+        elif t == 'integral':
+            f = sp.sympify(cfg['func'])
+            fn = sp.lambdify(x, f, 'numpy')
+            a, b = cfg['a'], cfg['b']
+            pad = (b - a) * 0.2
+            xs = np.linspace(a - pad, b + pad, 400)
+            ys = fn(xs)
+            self.prob_ax.plot(xs, ys, 'b-', linewidth=2)
+            xf = np.linspace(a, b, 400)
+            yf = fn(xf)
+            self.prob_ax.fill_between(xf, yf, alpha=0.3, color='skyblue')
+            self.prob_ax.axvline(a, color='red', linestyle='--')
+            self.prob_ax.axvline(b, color='red', linestyle='--')
+            self.prob_ax.grid(True, alpha=0.3)
+            self.prob_ax.set_xlabel('x')
+
+        elif t == 'area_between':
+            f1 = sp.sympify(cfg['func1'])
+            f2 = sp.sympify(cfg['func2'])
+            fn1 = sp.lambdify(x, f1, 'numpy')
+            fn2 = sp.lambdify(x, f2, 'numpy')
+            a, b = cfg['a'], cfg['b']
+            pad = (b - a) * 0.2
+            xs = np.linspace(a - pad, b + pad, 400)
+            self.prob_ax.plot(xs, fn1(xs), 'b-', linewidth=2, label='y = x')
+            self.prob_ax.plot(xs, fn2(xs), 'r-', linewidth=2, label='y = x²')
+            xf = np.linspace(a, b, 400)
+            self.prob_ax.fill_between(xf, fn1(xf), fn2(xf), alpha=0.3, color='green')
+            self.prob_ax.axhline(0, color='gray', linewidth=0.5)
+            self.prob_ax.legend(fontsize=9)
+            self.prob_ax.grid(True, alpha=0.3)
+
+        elif t == 'complex_phase':
+            r = cfg['range']
+            n = 300
+            xx = np.linspace(-r, r, n)
+            yy = np.linspace(-r, r, n)
+            XX, YY = np.meshgrid(xx, yy)
+            ZZ = XX + 1j * YY
+            local_vars = {'z': ZZ, 'np': np, 'sin': np.sin, 'cos': np.cos, 'exp': np.exp,
+                          'log': np.log, 'abs': np.abs, 'sqrt': np.sqrt, 'tan': np.tan,
+                          'pi': np.pi, 'e': np.e, '1j': 1j}
+            FZ = eval(cfg['func'].replace('^', '**'), {'__builtins__': {}}, local_vars)
+            phase = np.angle(FZ)
+            self.prob_ax.imshow(phase, extent=[-r, r, -r, r], cmap='hsv', origin='lower', aspect='auto')
+            self.prob_ax.set_xlabel('Re(z)')
+            self.prob_ax.set_ylabel('Im(z)')
+
+        elif t == 'complex_modulus':
+            r = cfg['range']
+            n = 300
+            xx = np.linspace(-r, r, n)
+            yy = np.linspace(-r, r, n)
+            XX, YY = np.meshgrid(xx, yy)
+            ZZ = XX + 1j * YY
+            local_vars = {'z': ZZ, 'np': np, 'sin': np.sin, 'cos': np.cos, 'exp': np.exp,
+                          'log': np.log, 'abs': np.abs, 'sqrt': np.sqrt, 'tan': np.tan,
+                          'pi': np.pi, 'e': np.e, '1j': 1j}
+            FZ = eval(cfg['func'].replace('^', '**'), {'__builtins__': {}}, local_vars)
+            mod = np.abs(FZ)
+            mod = np.clip(mod, 1e-10, np.percentile(mod[~np.isnan(mod)], 95))
+            cs = self.prob_ax.contourf(XX, YY, mod, levels=30, cmap='viridis')
+            self.prob_fig.colorbar(cs, ax=self.prob_ax, fraction=0.046, pad=0.04)
+            self.prob_ax.set_xlabel('Re(z)')
+            self.prob_ax.set_ylabel('Im(z)')
+
+        self.prob_ax.set_title(self.current_problem['title'])
+        self.prob_canvas.draw()
 
 
 if __name__ == '__main__':
